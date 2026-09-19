@@ -26,7 +26,13 @@ function formatMeetingType(type: SacramentMeeting['meetingType']): string {
   return labels[type];
 }
 
+function hasSacrament(type: SacramentMeeting['meetingType']): boolean {
+  return type === 'regular' || type === 'testimony';
+}
+
 export default function MeetingDetail({ meeting }: MeetingDetailProps) {
+  const shouldShowSacramentHymn = hasSacrament(meeting.meetingType);
+
   return (
     <article className="print-card rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
       <div className="mb-6 flex flex-col gap-4 border-b border-slate-200 pb-6 md:flex-row md:items-start md:justify-between">
@@ -50,9 +56,15 @@ export default function MeetingDetail({ meeting }: MeetingDetailProps) {
         </button>
       </div>
 
-      <section className="space-y-6">
-        <div>
-          <h2 className="text-lg font-bold text-slate-950">Announcements</h2>
+      <section className="space-y-6" aria-label="Meeting agenda">
+        <section aria-labelledby="announcements-heading">
+          <h2
+            id="announcements-heading"
+            className="text-lg font-bold text-slate-950"
+          >
+            Announcements
+          </h2>
+
           {meeting.announcements && meeting.announcements.length > 0 ? (
             <ul className="mt-2 list-disc space-y-1 pl-6 text-slate-700">
               {meeting.announcements.map((announcement) => (
@@ -62,9 +74,9 @@ export default function MeetingDetail({ meeting }: MeetingDetailProps) {
           ) : (
             <p className="mt-2 text-slate-700">No announcements listed.</p>
           )}
-        </div>
+        </section>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <section aria-label="Opening items" className="grid gap-4 md:grid-cols-2">
           <ProgramItem
             label="Opening Hymn"
             value={`#${meeting.openingHymn.number} · ${meeting.openingHymn.title}`}
@@ -76,12 +88,22 @@ export default function MeetingDetail({ meeting }: MeetingDetailProps) {
           />
           <ProgramItem
             label="Sacrament Hymn"
-            value={`#${meeting.sacramentHymn.number} · ${meeting.sacramentHymn.title}`}
+            value={
+              shouldShowSacramentHymn
+                ? `#${meeting.sacramentHymn.number} · ${meeting.sacramentHymn.title}`
+                : 'Not applicable for this meeting type'
+            }
           />
-        </div>
+        </section>
 
-        <div>
-          <h2 className="text-lg font-bold text-slate-950">Ward Business</h2>
+        <section aria-labelledby="ward-business-heading">
+          <h2
+            id="ward-business-heading"
+            className="text-lg font-bold text-slate-950"
+          >
+            Ward Business
+          </h2>
+
           {meeting.wardBusiness.length > 0 ? (
             <ul className="mt-2 list-disc space-y-1 pl-6 text-slate-700">
               {meeting.wardBusiness.map((item) => (
@@ -91,16 +113,17 @@ export default function MeetingDetail({ meeting }: MeetingDetailProps) {
           ) : (
             <p className="mt-2 text-slate-700">No ward business listed.</p>
           )}
-        </div>
+        </section>
 
-        <div>
-          <h2 className="text-lg font-bold text-slate-950">
+        <section aria-labelledby="speakers-heading">
+          <h2 id="speakers-heading" className="text-lg font-bold text-slate-950">
             Speakers and Musical Numbers
           </h2>
+
           <div className="mt-3 space-y-3">
             {meeting.speakers.map((item) => (
               <div
-                key={`${item.name}-${item.topic}`}
+                key={`${item.name}-${item.topic}-${item.type}`}
                 className="rounded-xl border border-slate-200 p-4"
               >
                 <p className="text-sm font-medium uppercase tracking-wide text-slate-500">
@@ -113,15 +136,15 @@ export default function MeetingDetail({ meeting }: MeetingDetailProps) {
               </div>
             ))}
           </div>
-        </div>
+        </section>
 
-        <div className="grid gap-4 md:grid-cols-2">
+        <section aria-label="Closing items" className="grid gap-4 md:grid-cols-2">
           <ProgramItem
             label="Closing Hymn"
             value={`#${meeting.closingHymn.number} · ${meeting.closingHymn.title}`}
           />
           <ProgramItem label="Closing Prayer" value={meeting.closingPrayer} />
-        </div>
+        </section>
       </section>
     </article>
   );
@@ -130,9 +153,9 @@ export default function MeetingDetail({ meeting }: MeetingDetailProps) {
 function ProgramItem({ label, value }: { label: string; value: string }) {
   return (
     <div className="rounded-xl border border-slate-200 p-4">
-      <h2 className="text-sm font-medium uppercase tracking-wide text-slate-500">
+      <p className="text-sm font-medium uppercase tracking-wide text-slate-500">
         {label}
-      </h2>
+      </p>
       <p className="mt-1 font-semibold text-slate-950">{value}</p>
     </div>
   );

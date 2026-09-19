@@ -20,11 +20,22 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${geist.className} min-h-screen bg-slate-50 text-slate-900 antialiased`}>
+      <body
+        className={`${geist.className} min-h-screen bg-slate-50 text-slate-900 antialiased`}
+      >
+        <a href="#maincontent" className="skip-link">
+          Skip to main content
+        </a>
+
         <Header />
-        <main className="mx-auto min-h-[70vh] max-w-6xl px-6 py-8">
+
+        <main
+          id="maincontent"
+          className="mx-auto min-h-[70vh] max-w-6xl px-6 py-8"
+        >
           {children}
         </main>
+
         <Footer />
       </body>
     </html>

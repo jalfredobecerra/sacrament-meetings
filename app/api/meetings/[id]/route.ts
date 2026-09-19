@@ -11,11 +11,18 @@ export async function GET(
   context: RouteContext,
 ): Promise<Response> {
   const { id } = await context.params;
-  const meetingId = Number(id);
+  const trimmedId = id.trim();
+  const meetingId = Number(trimmedId);
 
-  if (!Number.isInteger(meetingId)) {
+  const isValidId =
+    trimmedId.length > 0 &&
+    Number.isInteger(meetingId) &&
+    meetingId > 0 &&
+    String(meetingId) === trimmedId;
+
+  if (!isValidId) {
     return Response.json(
-      { error: 'Meeting id must be a valid number.' },
+      { error: 'Meeting id must be a valid positive number.' },
       { status: 400 },
     );
   }
@@ -23,10 +30,7 @@ export async function GET(
   const meeting = getMeetingById(meetingId);
 
   if (!meeting) {
-    return Response.json(
-      { error: 'Meeting not found.' },
-      { status: 404 },
-    );
+    return Response.json({ error: 'Meeting not found.' }, { status: 404 });
   }
 
   return Response.json(meeting);

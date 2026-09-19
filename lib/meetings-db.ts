@@ -138,9 +138,7 @@ const meetings: SacramentMeeting[] = [
     ],
     openingHymn: { number: 19, title: 'We Thank Thee, O God, for a Prophet' },
     openingPrayer: 'Sister Olivia White',
-    wardBusiness: [
-      { description: 'Welcome of new move-in family' },
-    ],
+    wardBusiness: [{ description: 'Welcome of new move-in family' }],
     stakeBusiness: false,
     sacramentHymn: { number: 185, title: 'Reverently and Meekly Now' },
     speakers: [

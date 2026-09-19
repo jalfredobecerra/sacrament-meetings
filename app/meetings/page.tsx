@@ -1,5 +1,6 @@
 import { headers } from 'next/headers';
 import MeetingCard from '../../components/MeetingCard';
+import { isSacramentMeetingArray } from '../../lib/meeting-guards';
 import type { SacramentMeeting } from '../../lib/types';
 
 async function getBaseUrl(): Promise<string> {
@@ -20,7 +21,13 @@ async function fetchMeetings(): Promise<SacramentMeeting[]> {
     throw new Error('Failed to load meetings.');
   }
 
-  return (await response.json()) as SacramentMeeting[];
+  const data: unknown = await response.json();
+
+  if (!isSacramentMeetingArray(data)) {
+    throw new Error('Invalid meetings response.');
+  }
+
+  return data;
 }
 
 export default async function MeetingsPage() {

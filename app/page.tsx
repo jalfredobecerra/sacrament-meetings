@@ -14,8 +14,8 @@ export default function HomePage() {
         </h1>
 
         <p className="mt-5 text-lg leading-8 text-slate-700">
-          Keep announcements, prayers, hymns, ward business, speakers, and musical
-          numbers in one organized place.
+          Keep announcements, prayers, hymns, ward business, speakers, and
+          musical numbers in one organized place.
         </p>
 
         <div className="mt-8 flex flex-wrap gap-3">

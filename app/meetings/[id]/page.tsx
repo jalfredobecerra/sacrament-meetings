@@ -1,6 +1,7 @@
-import { notFound } from 'next/navigation';
 import { headers } from 'next/headers';
+import { notFound } from 'next/navigation';
 import MeetingDetail from '../../../components/MeetingDetail';
+import { isSacramentMeeting } from '../../../lib/meeting-guards';
 import type { SacramentMeeting } from '../../../lib/types';
 
 interface MeetingPageProps {
@@ -23,7 +24,7 @@ async function fetchMeeting(id: string): Promise<SacramentMeeting> {
     cache: 'no-store',
   });
 
-  if (response.status === 404) {
+  if (response.status === 400 || response.status === 404) {
     notFound();
   }
 
@@ -31,7 +32,13 @@ async function fetchMeeting(id: string): Promise<SacramentMeeting> {
     throw new Error('Failed to load meeting.');
   }
 
-  return (await response.json()) as SacramentMeeting;
+  const data: unknown = await response.json();
+
+  if (!isSacramentMeeting(data)) {
+    throw new Error('Invalid meeting response.');
+  }
+
+  return data;
 }
 
 export default async function MeetingPage({ params }: MeetingPageProps) {
