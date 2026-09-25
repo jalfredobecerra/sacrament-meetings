@@ -23,5 +23,5 @@ export default function CurrentMeetingPage() {
     redirect('/meetings');
   }
 
-  redirect(`/meetings/${meeting.id}`);
+  redirect(`/meetings/${meeting.id}?source=current`);
 }
