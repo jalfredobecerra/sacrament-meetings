@@ -18,8 +18,7 @@ export default function NavLinks() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const source = searchParams.get('source');
-  const isCurrentProgram = source === 'current';
+  const isCurrentProgram = searchParams.get('source') === 'current';
 
   return (
     <nav aria-label="Main navigation">
