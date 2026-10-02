@@ -35,6 +35,30 @@ button {
   transform: translateY(0);
 }
 
+.form-input {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 0.75rem;
+  background: white;
+  padding: 0.75rem 1rem;
+  color: #0f172a;
+}
+
+.form-input::placeholder {
+  color: #64748b;
+}
+
+.form-input:focus {
+  outline: 2px solid #64748b;
+  outline-offset: 2px;
+  border-color: #64748b;
+}
+
+.form-input:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 @media print {
 
   header,

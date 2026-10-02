@@ -9,25 +9,31 @@ export async function getMeetings(
   query: string = '',
   currentPage: number = 1,
 ): Promise<SacramentMeeting[]> {
-  const searchTerm = `%${query}%`;
-  const offset = (currentPage - 1) * ITEMS_PER_PAGE;
+  const searchTerm = `%${query.trim()}%`;
+
+  const safePage =
+    Number.isInteger(currentPage) && currentPage > 0
+      ? currentPage
+      : 1;
+
+  const offset = (safePage - 1) * ITEMS_PER_PAGE;
 
   const rows = await sql`
     SELECT
       id,
       to_char(date, 'YYYY-MM-DD') AS "date",
-      meeting_type                AS "meetingType",
+      meeting_type AS "meetingType",
       presiding,
       conducting,
       announcements,
-      opening_hymn                AS "openingHymn",
-      opening_prayer              AS "openingPrayer",
-      ward_business               AS "wardBusiness",
-      stake_business              AS "stakeBusiness",
-      sacrament_hymn              AS "sacramentHymn",
+      opening_hymn AS "openingHymn",
+      opening_prayer AS "openingPrayer",
+      ward_business AS "wardBusiness",
+      stake_business AS "stakeBusiness",
+      sacrament_hymn AS "sacramentHymn",
       speakers,
-      closing_hymn                AS "closingHymn",
-      closing_prayer              AS "closingPrayer"
+      closing_hymn AS "closingHymn",
+      closing_prayer AS "closingPrayer"
     FROM meetings
     WHERE
       presiding ILIKE ${searchTerm}
@@ -42,10 +48,34 @@ export async function getMeetings(
   return rows as unknown as SacramentMeeting[];
 }
 
+export async function getAllMeetings(): Promise<SacramentMeeting[]> {
+  const rows = await sql`
+    SELECT
+      id,
+      to_char(date, 'YYYY-MM-DD') AS "date",
+      meeting_type AS "meetingType",
+      presiding,
+      conducting,
+      announcements,
+      opening_hymn AS "openingHymn",
+      opening_prayer AS "openingPrayer",
+      ward_business AS "wardBusiness",
+      stake_business AS "stakeBusiness",
+      sacrament_hymn AS "sacramentHymn",
+      speakers,
+      closing_hymn AS "closingHymn",
+      closing_prayer AS "closingPrayer"
+    FROM meetings
+    ORDER BY date DESC
+  `;
+
+  return rows as unknown as SacramentMeeting[];
+}
+
 export async function getMeetingsTotalPages(
   query: string = '',
 ): Promise<number> {
-  const searchTerm = `%${query}%`;
+  const searchTerm = `%${query.trim()}%`;
 
   const rows = await sql`
     SELECT COUNT(*) AS count
@@ -57,7 +87,9 @@ export async function getMeetingsTotalPages(
       OR speakers::text ILIKE ${searchTerm}
   `;
 
-  return Math.ceil(Number(rows[0].count) / ITEMS_PER_PAGE);
+  const count = Number(rows[0]?.count ?? 0);
+
+  return Math.ceil(count / ITEMS_PER_PAGE);
 }
 
 export async function getMeetingById(
@@ -67,23 +99,28 @@ export async function getMeetingById(
     SELECT
       id,
       to_char(date, 'YYYY-MM-DD') AS "date",
-      meeting_type                AS "meetingType",
+      meeting_type AS "meetingType",
       presiding,
       conducting,
       announcements,
-      opening_hymn                AS "openingHymn",
-      opening_prayer              AS "openingPrayer",
-      ward_business               AS "wardBusiness",
-      stake_business              AS "stakeBusiness",
-      sacrament_hymn              AS "sacramentHymn",
+      opening_hymn AS "openingHymn",
+      opening_prayer AS "openingPrayer",
+      ward_business AS "wardBusiness",
+      stake_business AS "stakeBusiness",
+      sacrament_hymn AS "sacramentHymn",
       speakers,
-      closing_hymn                AS "closingHymn",
-      closing_prayer              AS "closingPrayer"
+      closing_hymn AS "closingHymn",
+      closing_prayer AS "closingPrayer"
     FROM meetings
     WHERE id = ${id}
+    LIMIT 1
   `;
 
-  return (rows[0] as unknown as SacramentMeeting) ?? null;
+  if (!rows[0]) {
+    return null;
+  }
+
+  return rows[0] as unknown as SacramentMeeting;
 }
 
 export async function getMeetingByDate(
@@ -93,24 +130,28 @@ export async function getMeetingByDate(
     SELECT
       id,
       to_char(date, 'YYYY-MM-DD') AS "date",
-      meeting_type                AS "meetingType",
+      meeting_type AS "meetingType",
       presiding,
       conducting,
       announcements,
-      opening_hymn                AS "openingHymn",
-      opening_prayer              AS "openingPrayer",
-      ward_business               AS "wardBusiness",
-      stake_business              AS "stakeBusiness",
-      sacrament_hymn              AS "sacramentHymn",
+      opening_hymn AS "openingHymn",
+      opening_prayer AS "openingPrayer",
+      ward_business AS "wardBusiness",
+      stake_business AS "stakeBusiness",
+      sacrament_hymn AS "sacramentHymn",
       speakers,
-      closing_hymn                AS "closingHymn",
-      closing_prayer              AS "closingPrayer"
+      closing_hymn AS "closingHymn",
+      closing_prayer AS "closingPrayer"
     FROM meetings
-    WHERE date = ${date}
+    WHERE date = ${date}::date
     LIMIT 1
   `;
 
-  return (rows[0] as unknown as SacramentMeeting) ?? null;
+  if (!rows[0]) {
+    return null;
+  }
+
+  return rows[0] as unknown as SacramentMeeting;
 }
 
 export async function getMeetingsByDate(
@@ -120,20 +161,20 @@ export async function getMeetingsByDate(
     SELECT
       id,
       to_char(date, 'YYYY-MM-DD') AS "date",
-      meeting_type                AS "meetingType",
+      meeting_type AS "meetingType",
       presiding,
       conducting,
       announcements,
-      opening_hymn                AS "openingHymn",
-      opening_prayer              AS "openingPrayer",
-      ward_business               AS "wardBusiness",
-      stake_business              AS "stakeBusiness",
-      sacrament_hymn              AS "sacramentHymn",
+      opening_hymn AS "openingHymn",
+      opening_prayer AS "openingPrayer",
+      ward_business AS "wardBusiness",
+      stake_business AS "stakeBusiness",
+      sacrament_hymn AS "sacramentHymn",
       speakers,
-      closing_hymn                AS "closingHymn",
-      closing_prayer              AS "closingPrayer"
+      closing_hymn AS "closingHymn",
+      closing_prayer AS "closingPrayer"
     FROM meetings
-    WHERE date = ${date}
+    WHERE date = ${date}::date
     ORDER BY date DESC
   `;
 
@@ -143,29 +184,110 @@ export async function getMeetingsByDate(
 export async function addMeeting(
   data: Omit<SacramentMeeting, 'id'>,
 ): Promise<SacramentMeeting> {
-  void data;
+  const rows = await sql`
+    INSERT INTO meetings (
+      date,
+      meeting_type,
+      presiding,
+      conducting,
+      announcements,
+      opening_hymn,
+      opening_prayer,
+      ward_business,
+      stake_business,
+      sacrament_hymn,
+      speakers,
+      closing_hymn,
+      closing_prayer
+    )
+    VALUES (
+      ${data.date}::date,
+      ${data.meetingType},
+      ${data.presiding},
+      ${data.conducting},
+      ${data.announcements ?? []},
+      ${JSON.stringify(data.openingHymn)}::jsonb,
+      ${data.openingPrayer},
+      ${JSON.stringify(data.wardBusiness)}::jsonb,
+      ${data.stakeBusiness},
+      ${JSON.stringify(data.sacramentHymn)}::jsonb,
+      ${JSON.stringify(data.speakers)}::jsonb,
+      ${JSON.stringify(data.closingHymn)}::jsonb,
+      ${data.closingPrayer}
+    )
+    RETURNING
+      id,
+      to_char(date, 'YYYY-MM-DD') AS "date",
+      meeting_type AS "meetingType",
+      presiding,
+      conducting,
+      announcements,
+      opening_hymn AS "openingHymn",
+      opening_prayer AS "openingPrayer",
+      ward_business AS "wardBusiness",
+      stake_business AS "stakeBusiness",
+      sacrament_hymn AS "sacramentHymn",
+      speakers,
+      closing_hymn AS "closingHymn",
+      closing_prayer AS "closingPrayer"
+  `;
 
-  throw new Error(
-    'addMeeting: database implementation coming in Week 04',
-  );
+  return rows[0] as unknown as SacramentMeeting;
 }
 
 export async function updateMeeting(
   id: number,
-  updates: Partial<SacramentMeeting>,
+  data: Omit<SacramentMeeting, 'id'>,
 ): Promise<SacramentMeeting | null> {
-  void id;
-  void updates;
+  const rows = await sql`
+    UPDATE meetings
+    SET
+      date = ${data.date}::date,
+      meeting_type = ${data.meetingType},
+      presiding = ${data.presiding},
+      conducting = ${data.conducting},
+      announcements = ${data.announcements ?? []},
+      opening_hymn = ${JSON.stringify(data.openingHymn)}::jsonb,
+      opening_prayer = ${data.openingPrayer},
+      ward_business = ${JSON.stringify(data.wardBusiness)}::jsonb,
+      stake_business = ${data.stakeBusiness},
+      sacrament_hymn = ${JSON.stringify(data.sacramentHymn)}::jsonb,
+      speakers = ${JSON.stringify(data.speakers)}::jsonb,
+      closing_hymn = ${JSON.stringify(data.closingHymn)}::jsonb,
+      closing_prayer = ${data.closingPrayer}
+    WHERE id = ${id}
+    RETURNING
+      id,
+      to_char(date, 'YYYY-MM-DD') AS "date",
+      meeting_type AS "meetingType",
+      presiding,
+      conducting,
+      announcements,
+      opening_hymn AS "openingHymn",
+      opening_prayer AS "openingPrayer",
+      ward_business AS "wardBusiness",
+      stake_business AS "stakeBusiness",
+      sacrament_hymn AS "sacramentHymn",
+      speakers,
+      closing_hymn AS "closingHymn",
+      closing_prayer AS "closingPrayer"
+  `;
 
-  throw new Error(
-    'updateMeeting: database implementation coming in Week 04',
-  );
+  if (!rows[0]) {
+    return null;
+  }
+
+  return rows[0] as unknown as SacramentMeeting;
 }
 
-export async function deleteMeeting(id: number): Promise<boolean> {
-  void id;
+export async function deleteMeeting(
+  id: number,
+): Promise<boolean> {
+  const rows = await sql`
+    DELETE FROM meetings
+    WHERE id = ${id}
+    RETURNING id
+  `;
 
-  throw new Error(
-    'deleteMeeting: database implementation coming in Week 04',
-  );
+  return rows.length > 0;
 }

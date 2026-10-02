@@ -1,7 +1,21 @@
-import { Suspense } from 'react';
-import { MeetingSearch } from '@/components/MeetingSearch';
+import {
+  Suspense,
+} from 'react';
+
+import {
+  redirect,
+} from 'next/navigation';
+
+import {
+  MeetingSearch,
+} from '@/components/MeetingSearch';
+
 import MeetingCard from '@/components/MeetingCard';
-import { Pagination } from '@/components/Pagination';
+
+import {
+  Pagination,
+} from '@/components/Pagination';
+
 import {
   getMeetings,
   getMeetingsTotalPages,
@@ -17,47 +31,111 @@ interface MeetingsPageProps {
 export default async function MeetingsPage({
   searchParams,
 }: MeetingsPageProps) {
-  const params = await searchParams;
+  const params =
+    await searchParams;
 
-  const query = params?.query ?? '';
-  const currentPage = Number(params?.page) || 1;
+  const query =
+    params?.query ?? '';
 
-  const [meetings, totalPages] = await Promise.all([
-    getMeetings(query, currentPage),
-    getMeetingsTotalPages(query),
-  ]);
+  const parsedPage =
+    Number(params?.page);
+
+  const currentPage =
+    Number.isInteger(
+      parsedPage,
+    ) &&
+    parsedPage > 0
+      ? parsedPage
+      : 1;
+
+  const totalPages =
+    await getMeetingsTotalPages(
+      query,
+    );
+
+  if (
+    totalPages > 0 &&
+    currentPage >
+      totalPages
+  ) {
+    const nextParams =
+      new URLSearchParams();
+
+    if (query) {
+      nextParams.set(
+        'query',
+        query,
+      );
+    }
+
+    nextParams.set(
+      'page',
+      String(totalPages),
+    );
+
+    redirect(
+      `/meetings?${nextParams.toString()}`,
+    );
+  }
+
+  const meetings =
+    await getMeetings(
+      query,
+      currentPage,
+    );
 
   return (
     <div className="space-y-6">
       <Suspense
         fallback={
-          <div className="h-12 rounded-xl border border-slate-200 bg-white" />
+          <div
+            className="h-12 rounded-xl border border-slate-200 bg-white"
+            aria-hidden="true"
+          />
         }
       >
         <MeetingSearch />
       </Suspense>
 
-      {meetings.length > 0 ? (
+      {meetings.length >
+      0 ? (
         <div className="space-y-4">
-          {meetings.map((meeting) => (
-            <MeetingCard key={meeting.id} meeting={meeting} />
-          ))}
+          {meetings.map(
+            (meeting) => (
+              <MeetingCard
+                key={
+                  meeting.id
+                }
+                meeting={
+                  meeting
+                }
+              />
+            ),
+          )}
         </div>
       ) : (
         <div className="rounded-2xl border border-slate-200 bg-white p-6">
           <p className="text-slate-700">
-            No meetings matched your search.
+            No meetings matched
+            your search.
           </p>
         </div>
       )}
 
-        <Suspense
-          fallback={
-            <div className="h-15 pt-6" aria-hidden="true" />
+      <Suspense
+        fallback={
+          <div
+            className="h-12"
+            aria-hidden="true"
+          />
+        }
+      >
+        <Pagination
+          totalPages={
+            totalPages
           }
-        >
-          <Pagination totalPages={totalPages} />
-        </Suspense>
+        />
+      </Suspense>
     </div>
   );
 }
