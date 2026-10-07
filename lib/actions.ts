@@ -1,8 +1,14 @@
 'use server';
 
+import { AuthError } from 'next-auth';
 import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
+
+import {
+  auth,
+  signIn,
+} from '@/auth';
 
 import {
   addMeeting,
@@ -120,59 +126,54 @@ const MeetingFormSchema = z
             .map((line) => line.trim())
             .filter(Boolean);
 
-          lines.forEach(
-            (line, index) => {
-              const parts = line
-                .split('|')
-                .map((part) =>
-                  part.trim(),
-                );
+          lines.forEach((line, index) => {
+            const parts = line
+              .split('|')
+              .map((part) => part.trim());
 
-              if (parts.length !== 3) {
-                context.addIssue({
-                  code: 'custom',
-                  message:
-                    `Line ${index + 1} must use Name | Topic | speaker or musical-number.`,
-                });
+            if (parts.length !== 3) {
+              context.addIssue({
+                code: 'custom',
+                message:
+                  `Line ${index + 1} must use Name | Topic | speaker or musical-number.`,
+              });
 
-                return;
-              }
+              return;
+            }
 
-              const [
-                name,
-                topic,
-                type,
-              ] = parts;
+            const [
+              name,
+              topic,
+              type,
+            ] = parts;
 
-              if (!name) {
-                context.addIssue({
-                  code: 'custom',
-                  message:
-                    `Line ${index + 1} requires a name.`,
-                });
-              }
+            if (!name) {
+              context.addIssue({
+                code: 'custom',
+                message:
+                  `Line ${index + 1} requires a name.`,
+              });
+            }
 
-              if (!topic) {
-                context.addIssue({
-                  code: 'custom',
-                  message:
-                    `Line ${index + 1} requires a topic.`,
-                });
-              }
+            if (!topic) {
+              context.addIssue({
+                code: 'custom',
+                message:
+                  `Line ${index + 1} requires a topic.`,
+              });
+            }
 
-              if (
-                type !== 'speaker' &&
-                type !==
-                  'musical-number'
-              ) {
-                context.addIssue({
-                  code: 'custom',
-                  message:
-                    `Line ${index + 1} must end with speaker or musical-number.`,
-                });
-              }
-            },
-          );
+            if (
+              type !== 'speaker' &&
+              type !== 'musical-number'
+            ) {
+              context.addIssue({
+                code: 'custom',
+                message:
+                  `Line ${index + 1} must end with speaker or musical-number.`,
+              });
+            }
+          });
         },
       ),
 
@@ -200,48 +201,37 @@ const MeetingFormSchema = z
         'Closing prayer is required.',
       ),
   })
-  .superRefine(
-    (data, context) => {
-      const requiresSacramentHymn =
-        data.meetingType !== 'stake' &&
-        data.meetingType !== 'general';
+  .superRefine((data, context) => {
+    const requiresSacramentHymn =
+      data.meetingType !== 'stake' &&
+      data.meetingType !== 'general';
 
-      if (!requiresSacramentHymn) {
-        return;
-      }
+    if (!requiresSacramentHymn) {
+      return;
+    }
 
-      if (
-        data.sacramentHymnNumber < 1
-      ) {
-        context.addIssue({
-          code: 'custom',
-          path: [
-            'sacramentHymnNumber',
-          ],
-          message:
-            'Enter a valid sacrament hymn number.',
-        });
-      }
+    if (data.sacramentHymnNumber < 1) {
+      context.addIssue({
+        code: 'custom',
+        path: ['sacramentHymnNumber'],
+        message:
+          'Enter a valid sacrament hymn number.',
+      });
+    }
 
-      if (
-        !data.sacramentHymnTitle
-      ) {
-        context.addIssue({
-          code: 'custom',
-          path: [
-            'sacramentHymnTitle',
-          ],
-          message:
-            'Sacrament hymn title is required.',
-        });
-      }
-    },
-  );
+    if (!data.sacramentHymnTitle) {
+      context.addIssue({
+        code: 'custom',
+        path: ['sacramentHymnTitle'],
+        message:
+          'Sacrament hymn title is required.',
+      });
+    }
+  });
 
-type MeetingFormData =
-  z.infer<
-    typeof MeetingFormSchema
-  >;
+type MeetingFormData = z.infer<
+  typeof MeetingFormSchema
+>;
 
 export type State = {
   errors?: Partial<
@@ -253,86 +243,67 @@ export type State = {
   message?: string | null;
 };
 
+async function requireBishopricSession() {
+  const session = await auth();
+
+  if (!session?.user) {
+    redirect('/login');
+  }
+
+  return session;
+}
+
 function readFormData(
   formData: FormData,
 ) {
   return {
-    date: formData.get('date'),
+    date:
+      formData.get('date'),
 
     meetingType:
-      formData.get(
-        'meetingType',
-      ),
+      formData.get('meetingType'),
 
     presiding:
-      formData.get(
-        'presiding',
-      ),
+      formData.get('presiding'),
 
     conducting:
-      formData.get(
-        'conducting',
-      ),
+      formData.get('conducting'),
 
     announcements:
-      formData.get(
-        'announcements',
-      ) ?? '',
+      formData.get('announcements') ?? '',
 
     openingHymnNumber:
-      formData.get(
-        'openingHymnNumber',
-      ),
+      formData.get('openingHymnNumber'),
 
     openingHymnTitle:
-      formData.get(
-        'openingHymnTitle',
-      ),
+      formData.get('openingHymnTitle'),
 
     openingPrayer:
-      formData.get(
-        'openingPrayer',
-      ),
+      formData.get('openingPrayer'),
 
     wardBusiness:
-      formData.get(
-        'wardBusiness',
-      ) ?? '',
+      formData.get('wardBusiness') ?? '',
 
     stakeBusiness:
-      formData.get(
-        'stakeBusiness',
-      ) === 'on',
+      formData.get('stakeBusiness') === 'on',
 
     sacramentHymnNumber:
-      formData.get(
-        'sacramentHymnNumber',
-      ),
+      formData.get('sacramentHymnNumber'),
 
     sacramentHymnTitle:
-      formData.get(
-        'sacramentHymnTitle',
-      ) ?? '',
+      formData.get('sacramentHymnTitle') ?? '',
 
     speakers:
-      formData.get(
-        'speakers',
-      ) ?? '',
+      formData.get('speakers') ?? '',
 
     closingHymnNumber:
-      formData.get(
-        'closingHymnNumber',
-      ),
+      formData.get('closingHymnNumber'),
 
     closingHymnTitle:
-      formData.get(
-        'closingHymnTitle',
-      ),
+      formData.get('closingHymnTitle'),
 
     closingPrayer:
-      formData.get(
-        'closingPrayer',
-      ),
+      formData.get('closingPrayer'),
   };
 }
 
@@ -341,18 +312,14 @@ function linesToStrings(
 ): string[] {
   return value
     .split('\n')
-    .map((line) =>
-      line.trim(),
-    )
+    .map((line) => line.trim())
     .filter(Boolean);
 }
 
 function parseWardBusiness(
   value: string,
 ): WardBusinessItem[] {
-  return linesToStrings(
-    value,
-  ).map(
+  return linesToStrings(value).map(
     (description) => ({
       description,
     }),
@@ -362,44 +329,36 @@ function parseWardBusiness(
 function parseSpeakers(
   value: string,
 ): SpeakerItem[] {
-  return linesToStrings(
-    value,
-  ).map((line) => {
-    const [
-      name,
-      topic,
-      rawType,
-    ] = line
-      .split('|')
-      .map((part) =>
-        part.trim(),
-      );
+  return linesToStrings(value).map(
+    (line) => {
+      const [
+        name,
+        topic,
+        rawType,
+      ] = line
+        .split('|')
+        .map((part) => part.trim());
 
-    const type: SpeakerItem['type'] =
-      rawType ===
-      'musical-number'
-        ? 'musical-number'
-        : 'speaker';
+      const type: SpeakerItem['type'] =
+        rawType === 'musical-number'
+          ? 'musical-number'
+          : 'speaker';
 
-    return {
-      name,
-      topic,
-      type,
-    };
-  });
+      return {
+        name,
+        topic,
+        type,
+      };
+    },
+  );
 }
 
 function buildMeeting(
   data: MeetingFormData,
-): Omit<
-  SacramentMeeting,
-  'id'
-> {
+): Omit<SacramentMeeting, 'id'> {
   const hasSacramentHymn =
-    data.meetingType !==
-      'stake' &&
-    data.meetingType !==
-      'general';
+    data.meetingType !== 'stake' &&
+    data.meetingType !== 'general';
 
   return {
     date: data.date,
@@ -421,6 +380,7 @@ function buildMeeting(
     openingHymn: {
       number:
         data.openingHymnNumber,
+
       title:
         data.openingHymnTitle,
     },
@@ -441,6 +401,7 @@ function buildMeeting(
         ? {
             number:
               data.sacramentHymnNumber,
+
             title:
               data.sacramentHymnTitle,
           }
@@ -457,6 +418,7 @@ function buildMeeting(
     closingHymn: {
       number:
         data.closingHymnNumber,
+
       title:
         data.closingHymnTitle,
     },
@@ -466,23 +428,66 @@ function buildMeeting(
   };
 }
 
+export async function authenticate(
+  prevState: string | undefined,
+  formData: FormData,
+): Promise<string | undefined> {
+  void prevState;
+
+  const email =
+    formData.get('email');
+
+  const password =
+    formData.get('password');
+
+  if (
+    typeof email !== 'string' ||
+    typeof password !== 'string' ||
+    !email.trim() ||
+    !password
+  ) {
+    return 'Email and password are required.';
+  }
+
+  try {
+    await signIn('credentials', {
+      email: email.trim(),
+      password,
+      redirectTo: '/meetings',
+    });
+  } catch (error) {
+    if (error instanceof AuthError) {
+      switch (error.type) {
+        case 'CredentialsSignin':
+          return 'Invalid email or password.';
+
+        default:
+          return 'Unable to sign in. Please try again.';
+      }
+    }
+
+    throw error;
+  }
+}
+
 export async function createMeeting(
   prevState: State,
   formData: FormData,
 ): Promise<State> {
   void prevState;
 
+  await requireBishopricSession();
+
   const validatedFields =
     MeetingFormSchema.safeParse(
       readFormData(formData),
     );
 
-  if (
-    !validatedFields.success
-  ) {
+  if (!validatedFields.success) {
     return {
       errors:
-        validatedFields.error.flatten()
+        validatedFields.error
+          .flatten()
           .fieldErrors,
 
       message:
@@ -507,9 +512,7 @@ export async function createMeeting(
     );
   }
 
-  revalidatePath(
-    '/meetings',
-  );
+  revalidatePath('/meetings');
 
   redirect('/meetings');
 }
@@ -521,17 +524,27 @@ export async function updateMeeting(
 ): Promise<State> {
   void prevState;
 
+  await requireBishopricSession();
+
+  if (
+    !Number.isInteger(id) ||
+    id <= 0
+  ) {
+    throw new Error(
+      'Invalid meeting ID.',
+    );
+  }
+
   const validatedFields =
     MeetingFormSchema.safeParse(
       readFormData(formData),
     );
 
-  if (
-    !validatedFields.success
-  ) {
+  if (!validatedFields.success) {
     return {
       errors:
-        validatedFields.error.flatten()
+        validatedFields.error
+          .flatten()
           .fieldErrors,
 
       message:
@@ -564,8 +577,9 @@ export async function updateMeeting(
     );
   }
 
+  revalidatePath('/meetings');
   revalidatePath(
-    '/meetings',
+    `/meetings/${id}`,
   );
 
   redirect('/meetings');
@@ -577,11 +591,20 @@ export async function deleteMeeting(
 ): Promise<void> {
   void formData;
 
+  await requireBishopricSession();
+
+  if (
+    !Number.isInteger(id) ||
+    id <= 0
+  ) {
+    throw new Error(
+      'Invalid meeting ID.',
+    );
+  }
+
   try {
     const deleted =
-      await deleteMeetingRecord(
-        id,
-      );
+      await deleteMeetingRecord(id);
 
     if (!deleted) {
       throw new Error(
@@ -599,9 +622,7 @@ export async function deleteMeeting(
     );
   }
 
-  revalidatePath(
-    '/meetings',
-  );
+  revalidatePath('/meetings');
 
   redirect('/meetings');
 }

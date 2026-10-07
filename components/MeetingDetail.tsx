@@ -21,6 +21,7 @@ function formatMeetingType(type: SacramentMeeting['meetingType']): string {
     regular: 'Regular sacrament meeting',
     stake: 'Stake meeting',
     general: 'General meeting',
+    special: 'Special meeting',
   };
 
   return labels[type];

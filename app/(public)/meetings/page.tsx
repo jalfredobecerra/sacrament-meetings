@@ -21,12 +21,24 @@ import {
   getMeetingsTotalPages,
 } from '@/lib/meetings-db';
 
+import type {
+  Metadata,
+} from 'next';
+
+
 interface MeetingsPageProps {
   searchParams?: Promise<{
     query?: string;
     page?: string;
   }>;
 }
+
+export const metadata: Metadata = {
+  title: 'Meeting Programs',
+
+  description:
+    'Browse sacrament meeting programs, speakers, hymns, and meeting details.',
+};
 
 export default async function MeetingsPage({
   searchParams,

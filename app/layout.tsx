@@ -9,8 +9,31 @@ const geist = Geist({
 });
 
 export const metadata: Metadata = {
-  title: 'Sacrament Meeting Planner',
-  description: 'Plan, review, and print sacrament meeting programs.',
+  metadataBase: new URL(
+    process.env.SITE_URL ??
+      'http://localhost:3000',
+  ),
+
+  title: {
+    default:
+      'Sacrament Meeting Planner',
+
+    template:
+      '%s | Sacrament Meeting Planner',
+  },
+
+  description:
+    'View and manage sacrament meeting programs for Hillside Ward.',
+
+  openGraph: {
+    title:
+      'Sacrament Meeting Planner',
+
+    description:
+      'View and manage sacrament meeting programs for Hillside Ward.',
+
+    type: 'website',
+  },
 };
 
 export default function RootLayout({
